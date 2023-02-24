@@ -116,14 +116,12 @@ class KDE:
 
         if splits is None and processes > 1:
             splits = os.cpu_count()
-
         split_points = np.array_split(points, splits, axis=1)
 
         if processes == 1:
             split_evals = list(map(func, split_points))
         else:
             split_evals = tqdm_pathos.map(func, split_points, n_cpus=processes)
-
         evals = np.concatenate(split_evals)
 
         return evals
