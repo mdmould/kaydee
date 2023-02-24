@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 name = 'kaydee'
-version = '0.1.0'
+version = '0.1.1'
 
 with open('README.md', 'r') as f:
     long_description = f.read().strip()
@@ -17,7 +17,7 @@ setup(
     author_email='mattdmould@gmail.com',
     license='MIT',
     packages=find_packages(),
-    install_requires=['numpy', 'scipy'],
+    install_requires=['numpy', 'scipy', 'tqdm-pathos'],
     python_requires='>=3.7',
     )
 
