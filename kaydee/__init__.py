@@ -1,5 +1,7 @@
+import os
 import numpy as np
 from scipy.stats import gaussian_kde
+import tqdm_pathos
 
 
 ## TODO
@@ -55,7 +57,7 @@ class KDE:
             
         self.kde = gaussian_kde(samples, bw_method=bandwidth)
         
-    def pdf(self, points):
+    def pdf(self, points, splits=None, processes=1):
         """Evaluate the probability density of the KDE.
         
         Arguments
@@ -72,7 +74,7 @@ class KDE:
         """
         
         points = np.atleast_2d(points)
-        pdf = self.kde.pdf(points)
+        pdf = self.map_eval(self.kde.pdf, points, splits, processes)
         
         if self.reflect:
             pdf = pdf * (self.n_reflections + 1)
@@ -81,7 +83,7 @@ class KDE:
             
         return pdf
     
-    def log_pdf(self, points):
+    def log_pdf(self, points, splits=None, processes=1):
         """Evaluate the log probability density of the KDE.
         
         Arguments
@@ -98,7 +100,7 @@ class KDE:
         """
         
         points = np.atleast_2d(points)
-        log_pdf = self.kde.logpdf(points)
+        log_pdf = self.map_eval(self.kde.logpdf, points, splits, processes)
         
         if self.reflect:
             log_pdf = log_pdf + np.log(self.n_reflections + 1)
@@ -106,7 +108,26 @@ class KDE:
             log_pdf[~in_bounds] = -np.inf
             
         return log_pdf
-            
+    
+    def map_eval(self, func, points, splits=None, processes=1):
+
+        if splits is None and processes == 1:
+            return func(points)
+
+        if splits is None and processes > 1:
+            splits = os.cpu_count()
+
+        split_points = np.array_split(points, splits, axis=1)
+
+        if processes == 1:
+            split_evals = list(map(func, split_points))
+        else:
+            split_evals = tqdm_pathos.map(func, split_points, n_cpus=processes)
+
+        evals = np.concatenate(split_evals)
+
+        return evals
+
     def get_bounds(self, samples, bounds):
         
         if bounds is True:
